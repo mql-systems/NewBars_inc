@@ -125,7 +125,7 @@ bool NewBarsDb::OpenDb(const bool isWritable, const string dbName, const ENUM_NE
    m_PointFormat = StringFormat("%%.%df", m_DefaultSettings.digits);
    
    if (dbName == NULL || StringLen(dbName) == 0)
-      m_DbName = GetDbNamePrefix()+ m_DefaultSettings.symbol +"_"+ m_DefaultSettings.serverName +".db";
+      m_DbName = GetDbNamePrefix()+ m_DefaultSettings.symbol +"_S"+ string(newBarSize) +"_"+ m_DefaultSettings.serverName +".db";
    else
       m_DbName = dbName;
    
