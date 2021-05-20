@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 #property copyright "Copyright 2021, Diamond Systems Corp."
 #property link      "https://diamondsystems.org"
-#property version   "0.01"
+#property version   "0.02"
 
 #include "Defines.mqh";
 
@@ -31,7 +31,8 @@ class NewBarsDb
       bool           UpdateSettings();
    
    protected:
-      virtual string GetDbNamePrefix()   { return NEWBARS_DB_NAME_PREFIX; }
+      virtual string GetDbNamePrefix() { return NEWBARS_DB_NAME_PREFIX; }
+      virtual int    GetDataCountByTemplate(const int dbH, const string tableName);
       virtual int    GetNewBarsByTemplate(
                         const int                      dbH,
                         const string                   tableName,
@@ -336,28 +337,14 @@ ulong NewBarsDb::GetLastTimeMsec()
 
 //+------------------------------------------------------------------+
 //| NewBars cont                                                     |
+//| ---------------------                                            |
+//| return:                                                          |
+//| <= 0 = NewBars count                                             |
+//| ==-1 = false                                                     |
 //+------------------------------------------------------------------+
 int NewBarsDb::NewBarsCount()
 {
-   if (m_DbH == NULL)
-   {
-      SetErrorDbClosed();
-      return 0;
-   }
-   
-   int dbR = DatabasePrepare(m_DbH, "SELECT COUNT(id) FROM bars");
-   if (dbR == INVALID_HANDLE)
-   {
-      SetError(NEWBARS_ERROR_DB_QUERY, "request 'NewBars count' failed");
-      return 0;
-   }
-   
-   int result;
-   if (! DatabaseRead(dbR) || ! DatabaseColumnInteger(dbR, 0, result))
-      result = 0;
-   DatabaseFinalize(dbR);
-   
-   return result;
+   return GetDataCountByTemplate(m_DbH, "bars");
 }
 
 //+------------------------------------------------------------------+
@@ -442,6 +429,36 @@ int NewBarsDb::GetNewBars(NewBar &newBars[], const datetime startTime, const dat
       return 0;
    
    return GetNewBarsByTemplate(m_DbH, "bars", NEWBARS_SEARCH_TIME_TIME, (startTime * 1000), (stopTime * 1000), newBars, searchDirection);
+}
+
+//+------------------------------------------------------------------+
+//| Get Data count by templates                                      |
+//| -------------------------                                        |
+//| return:                                                          |
+//| <= 0 Data count                                                  |
+//| ==-1 false                                                       |
+//+------------------------------------------------------------------+
+int NewBarsDb::GetDataCountByTemplate(const int dbH, const string tableName)
+{
+   if (dbH == NULL)
+   {
+      SetErrorDbClosed();
+      return -1;
+   }
+   
+   int dbR = DatabasePrepare(dbH, "SELECT COUNT(id) FROM "+tableName);
+   if (dbR == INVALID_HANDLE)
+   {
+      SetError(NEWBARS_ERROR_DB_QUERY, "request 'data count' failed");
+      return -1;
+   }
+   
+   int result;
+   if (! DatabaseRead(dbR) || ! DatabaseColumnInteger(dbR, 0, result))
+      result = 0;
+   DatabaseFinalize(dbR);
+   
+   return result;
 }
 
 //+------------------------------------------------------------------+
